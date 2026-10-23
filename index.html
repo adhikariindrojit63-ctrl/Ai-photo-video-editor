@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PixelAI Editor</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0c1020;color:#f5f5ff;
+font-family:Arial,sans-serif}
+header{padding:20px;text-align:center;background:#171d33}
+h1{margin:0;color:#a99bff}
+main{max-width:760px;margin:auto;padding:16px}
+.panel{background:#171d33;padding:16px;border-radius:16px;
+margin:14px 0}
+button,.upload{background:#7964ed;color:white;border:0;
+padding:12px;border-radius:9px;cursor:pointer;
+font-size:15px;margin:4px}
+input[type=file]{max-width:100%}
+input[type=range]{width:100%}
+.preview{width:100%;max-height:380px;object-fit:contain;
+margin-top:12px;border-radius:10px;background:#080b14}
+video{width:100%;max-height:380px;margin-top:12px}
+label{display:block;margin-top:14px}
+.note{color:#bdc4dc;font-size:14px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+<h1>✨ PixelAI Editor</h1>
+<p id="subtitle">তোমার ছবি ও ভিডিও এডিট করো</p>
+<button onclick="toggleLang()">বাংলা / English</button>
+</header>
+<main>
+<section class="panel">
+<h2 id="photoTitle">📸 ছবি এডিটর</h2>
+<input id="photoFile" type="file" accept="image/*">
+<canvas id="canvas" class="preview"></canvas>
+<label id="brightLabel">উজ্জ্বলতা</label>
+<input id="bright" type="range" min="30" max="180" value="100">
+<label id="contrastLabel">কনট্রাস্ট</label>
+<input id="contrast" type="range" min="30" max="180" value="100">
+<label id="satLabel">রঙের তীব্রতা</label>
+<input id="sat" type="range" min="0" max="200" value="100">
+<div>
+<button onclick="resetPhoto()" id="resetBtn">রিসেট</button>
+<button onclick="downloadPhoto()" id="downloadBtn">ছবি ডাউনলোড</button>
+</div>
+</section>
+
+<section class="panel">
+<h2 id="videoTitle">🎬 ভিডিও এডিটর</h2>
+<input id="videoFile" type="file" accept="video/*">
+<video id="video" controls playsinline></video>
+<label id="videoFilterLabel">ভিডিও ফিল্টার</label>
+<select id="filter" onchange="setFilter()">
+<option value="none">Original</option>
+<option value="grayscale(1)">Black & White</option>
+<option value="sepia(1)">Vintage</option>
+<option value="saturate(1.8)">Vivid</option>
+<option value="contrast(1.3) brightness(1.1)">Cinematic</option>
+</select>
+<p class="note" id="videoNote">
+এখানে ভিডিও প্রিভিউ ও ফিল্টার দেখা যাবে।
+ভিডিও ফাইল এক্সপোর্ট এই প্রাথমিক সংস্করণে নেই।
+</p>
+</section>
+
+<section class="panel">
+<h2 id="aiTitle">🤖 AI ফিচার</h2>
+<p id="aiNote">AI Background Removal ও AI Video Effects ভবিষ্যতে যোগ করা যাবে।</p>
+<p class="note" id="privacy">
+তোমার ছবি ও ভিডিও এই পেজে ব্রাউজারেই খোলা হয়।
+ব্যক্তিগত ছবি অনলাইনে শেয়ার কোরো না।
+</p>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+let img=new Image(),loaded=false;
+const canvas=$("canvas"),ctx=canvas.getContext("2d");
+
+$("photoFile").addEventListener("change",e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+ const url=URL.createObjectURL(file);
+ img.onload=()=>{
+  canvas.width=img.naturalWidth;
+  canvas.height=img.naturalHeight;
+  loaded=true;draw();
+  URL.revokeObjectURL(url);
+ };
+ img.src=url;
+});
+
+["bright","contrast","sat"].forEach(id=>{
+ $(id).addEventListener("input",draw);
+});
+
+function draw(){
+ if(!loaded)return;
+ ctx.filter=`brightness(${$("bright").value}%)
+ contrast(${$("contrast").value}%)
+ saturate(${$("sat").value}%)`;
+ ctx.drawImage(img,0,0,canvas.width,canvas.height);
+ ctx.filter="none";
+}
+function resetPhoto(){
+ $("bright").value=100;
+ $("contrast").value=100;
+ $("sat").value=100;
+ draw();
+}
+function downloadPhoto(){
+ if(!loaded){alert("আগে একটি ছবি আপলোড করো / Upload a photo first");return;}
+ const a=document.createElement("a");
+ a.download="pixelai-edited.png";
+ a.href=canvas.toDataURL("image/png");
+ a.click();
+}
+$("videoFile").addEventListener("change",e=>{
+ const f=e.target.files[0];
+ if(f)$("video").src=URL.createObjectURL(f);
+});
+function setFilter(){
+ $("video").style.filter=$("filter").value;
+}
+let english=false;
+function toggleLang(){
+ english=!english;
+ const words=english?{
+ subtitle:"Edit your photos and videos",
+ photoTitle:"📸 Photo Editor",
+ brightLabel:"Brightness",contrastLabel:"Contrast",
+ satLabel:"Saturation",resetBtn:"Reset",
+ downloadBtn:"Download Image",videoTitle:"🎬 Video Editor",
+ videoFilterLabel:"Video Filter",
+ videoNote:"Preview video filters here. Exporting edited video is not included in this starter version.",
+ aiTitle:"🤖 AI Features",
+ aiNote:"AI Background Removal and AI Video Effects can be added later.",
+ privacy:"Your media opens in your browser on this page. Avoid sharing private photos online."
+ }:{
+ subtitle:"তোমার ছবি ও ভিডিও এডিট করো",
+ photoTitle:"📸 ছবি এডিটর",
+ brightLabel:"উজ্জ্বলতা",contrastLabel:"কনট্রাস্ট",
+ satLabel:"রঙের তীব্রতা",resetBtn:"রিসেট",
+ downloadBtn:"ছবি ডাউনলোড",videoTitle:"🎬 ভিডিও এডিটর",
+ videoFilterLabel:"ভিডিও ফিল্টার",
+ videoNote:"এখানে ভিডিও প্রিভিউ ও ফিল্টার দেখা যাবে। ভিডিও ফাইল এক্সপোর্ট এই প্রাথমিক সংস্করণে নেই।",
+ aiTitle:"🤖 AI ফিচার",
+ aiNote:"AI Background Removal ও AI Video Effects ভবিষ্যতে যোগ করা যাবে।",
+ privacy:"তোমার ছবি ও ভিডিও এই পেজে ব্রাউজারেই খোলা হয়। ব্যক্তিগত ছবি অনলাইনে শেয়ার কোরো না।"
+ };
+ Object.keys(words).forEach(id=>$(id).textContent=words[id]);
+ document.documentElement.lang=english?"en":"bn";
+}
+</script>
+</body>
+</html>
